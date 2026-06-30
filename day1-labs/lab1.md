@@ -101,8 +101,14 @@ In this portion of the lab we will work with the `ip route`, `traceroute`, and `
 2. Try the `traceroute`, `tracepath` and `mtr` commands. For example:
 
    ```console
-   traceroute example.com
-   tracepath example.com
+   traceroute example.com   
+   ```
+
+   ```console
+   tracepath example.com   
+   ```
+
+   ```console   
    mtr example.com
    ```
 
@@ -126,7 +132,7 @@ Now let's work with ports and sockets. First, let's describe them.
 
 Now let's use them:
 
-### Step 1 — List all *listening* TCP sockets
+**Step 1 — List all *listening* TCP sockets**
  
 ```console
 ss -tln
@@ -134,7 +140,7 @@ ss -tln
  
 `-t` TCP, `-l` listening only, `-n` numeric (no DNS lookups) .
  
-### Step 2 — List all *established* connections
+**Step 2 — List all *established* connections**
  
 ```console
 ss -tn
@@ -144,13 +150,13 @@ Add `-p` to show processes.
 
 > Note: Another set of flags I use often is `ss -tanpu`. This combines listening sockets (`-l`) and established sockets (`-t`) for UDP and TCP (`-u`) and shows the owning process (`-p`). To see *everything* simply use the `ss` command but be prepared for a lot of output! 
 
-### Step 3 - List connections with `lsof`
+**Step 3 - List connections with `lsof`**
 
 ```console
 sudo lsof -i
 ```
 
-### Step 4 — Find which process owns a specific port
+**Step 4 — Find which process owns a specific port**
  
 ```console
 sudo lsof -i :22
