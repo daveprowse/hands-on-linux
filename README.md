@@ -31,7 +31,7 @@ You can find step-by-step instructions and videos about how to install a Debian 
 
 My main IP network for the virtual machines is 10.0.2.0/24. I used this to mimic what you would see if you were using VirtualBox in NAT Network mode (which is an excellent way to learn!)
 
-Enjoy the course!
+**Enjoy the course!**
 
 Dave Prowse
 
