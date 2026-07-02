@@ -1,4 +1,4 @@
-# MTU Jumbo Frames Lab — KVM VM Network Performance Test
+# Appendix 3 — MTU Jumbo Frames Lab — KVM VM Network Performance Test
 
 ## Overview
 

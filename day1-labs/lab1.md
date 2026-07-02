@@ -1,4 +1,4 @@
-# ⚙️ LAB 1: NETWORKING COMMANDS & CONFIGURATIONS
+# ⚙️ LAB 1 - NETWORKING COMMANDS & CONFIGURATIONS
 
 In this lab we will cover the following Linux commands:
 - ip, ping, traceroute, ss, lsof, nmcli, netcat, nmap, dig, curl, tcpdump
@@ -497,13 +497,19 @@ E. ss
 
 ## Additional Information
 
-**LEARN MORE!**
+### MORE LABS!
+
+**Network Inspection**
 
 I've set up two Bash scripts for you that condense/automate what he have done in Lab 1. They're usage is described in the z-more-stuff directory: [appendix-2-network-inspection-script](../z-more-stuff/appendix-2-network-inspection-scripts.md)
 
-Also, check out the [Bash Shortcuts](../z-more-stuff/bash_shortcuts.md) document.
+> Note: Also, check out the [Bash Shortcuts](../z-more-stuff/bash_shortcuts.md) document. Saves you time *and* energy!
 
-Also, I built my own GUI-based network analysis tool for local systems called *Network Inquisition*. It's on GitHub [here](https://github.com/daveprowse/network-inquisition). Have fun and feel free to ask for new functionality in "Issues".
+In addition, I built my own GUI-based network analysis tool for local systems called *Network Inquisition*. It's on GitHub [here](https://github.com/daveprowse/network-inquisition). Have fun and feel free to ask for new functionality in "Issues".
+
+**Network Performance**
+
+There is an extra lab that makes use of `iperf` to check network performance. See [appendix-3-mtu-performance-test](../z-more-stuff/appendix-3-mtu-performance-test.md)
 
 ### TCP/IP Reference Links
 
