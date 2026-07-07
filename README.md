@@ -12,6 +12,8 @@ Website: https://prowse.tech
 
 Discord Server (Hands-On Linux channel): https://discord.gg/Cqu3kpBBDk 
 
+> Note: If you have questions about any of the labs, post them at that Hands-on Linux channel!
+
 ---
 
 You will find the lab guides for Day 1 and Day 2 within this repository. Enjoy!

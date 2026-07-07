@@ -8,7 +8,7 @@ In this lab we wll show how to:
 
 ## Lab 2a - SSH from Client to Server
 
-**Estimated time: 8 min**
+**Estimated time: 10 min**
 
 Both VMs must be running and reachable on `10.0.2.0/24`.
 
@@ -70,7 +70,7 @@ ssh dave@10.0.2.51 "hostname && uptime"
 
 ## Lab 2b - SSH with Keys
 
-**Estimated time: 10 min**
+**Estimated time: 13 min**
 
 Key-based authentication removes the need for passwords and is the standard for production systems. OpenSSH 10.0 on Debian 13 and CentOS Stream 10 defaults to ed25519.
 
@@ -114,9 +114,17 @@ You should be prompted for your key passphrase instead of your account password.
 
 ---
 
+> ### SSH Certificates
+>
+> You can also connect by way of SSH certificates - the newer standard. SSH certificates are SSH keys that have been signed by a trusted Certificate Authority, allowing servers to grant access based on CA trust rather than storing individual public keys in `authorized_keys`.
+>
+> This is an in-depth process, and too time-consuming for this lab, but I wrote out a separate step-by-step lab for you. There are separate lab documents in Appendix 5 for [Debian](../z-more-stuff/appendix-5a-debian-ssh-certificates-with-smallstep.md) and for [CentOS](../z-more-stuff/appendix-5b-centos-ssh-certificates-with-smallstep.md). Enjoy!
+
+---
+
 ## Lab 2c - Using rsync to Transfer Data
 
-**Estimated time: 10 min**
+**Estimated time: 12 min**
 
 ### Install rsync on both VMs
 
@@ -192,7 +200,27 @@ rsync -av --delete ~/lab-files/ dave@10.0.2.51:~/lab-files/
 
 `--delete` removes files from the destination that have been deleted on the source. Use with caution.
 
+> **Note:** Use `-P` to show `--progress` and `--partial`. That will show the progress bar but also, can resume file transfers if there is a stop or error. I use it all the time!
+
 > **Note:** rsync uses SSH as its transport by default when a remote host is specified. No additional configuration is needed if key-based SSH authentication is already working.
+>
+> **Note:** You can also use `rsync://` as the method of transfer instead of SSH. For example, locally:
+> 
+> `rsync rsync://localhost/source/ /destination/`
+>
+> or, remotely:
+>
+> `rsync rsync://source-ip/videos/ /destination/path/`
+> 
+> However, this requires an rsync daemon running locally with the source configured as a module in `/etc/rsyncd.conf`. Example:
+>
+> ```
+> [videos]
+> path = /path/to/mp4s
+> read only = yes
+> ```
+>
+>If you have a lot of data, this could provide for a faster and more stable transfer than running within SSH (which is prone to failure when transferring large amounts of data). But we are gaining speed and stability at the cost of security, as the rsync daemon will skip encryption entirely. That said, it can be beneficial on an *isolated, trusted* network (and especially running internally between drives).
 
 ---
 
