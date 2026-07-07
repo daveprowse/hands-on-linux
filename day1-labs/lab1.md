@@ -1,4 +1,4 @@
-# ⚙️ LAB 1 - NETWORKING COMMANDS & CONFIGURATIONS
+# ⚙️ LAB 1 - Networking Commands & Configurations
 
 In this lab we will cover the following Linux commands:
 - ip, ping, traceroute, ss, lsof, nmcli, netcat, nmap, dig, curl, tcpdump
