@@ -9,6 +9,8 @@ In this lab we will:
 
 > **Note:** This lab runs on a single VM at 10.0.2.51 using Debian 13. CentOS Stream 10 differences are noted inline.
 
+Let's go! 
+
 ---
 
 ## Lab 4a — Install Docker and Inspect the Bridge
@@ -276,6 +278,19 @@ docker network rm labnet
 
 ---
 
+## Estimated Time Summary
+
+| Lab | Task | Time |
+|-----|------|------|
+| 4a | Install Docker, inspect bridge | 10 min |
+| 4b | Create custom bridge network | 8 min |
+| 4c | Container-to-container communication | 12 min |
+| 4d | Port mapping to the host | 8 min |
+| Buffer | Questions and troubleshooting | 7 min |
+| **Total** | | **~45 min** |
+
+---
+
 ## ⭐ Extra Credit — Run a Web App on the Default Bridge
 
 If there is time left, try this fun one-liner that spins up a fully working web game inside a container on the default bridge and maps it to the host:
@@ -298,18 +313,21 @@ docker stop 2048 && docker rm 2048
 
 ---
 
-## Estimated Time Summary
+## ⭐⭐ Extra Extra Credit — Docker Network Drivers
 
-| Lab | Task | Time |
-|-----|------|------|
-| 4a | Install Docker, inspect bridge | 10 min |
-| 4b | Create custom bridge network | 8 min |
-| 4c | Container-to-container communication | 12 min |
-| 4d | Port mapping to the host | 8 min |
-| Buffer | Questions and troubleshooting | 7 min |
-| **Total** | | **~45 min** |
+Docker supports six network drivers:
 
----
+**bridge** — the default. Creates a virtual switch on the host. Containers get private IPs and communicate through it. NAT handles external traffic.
+
+**host** — removes network isolation. Container shares the host's network stack directly. No virtual interface, no NAT, no port mapping needed.
+
+**none** — disables all networking. Container has only a loopback interface. Used for maximum isolation.
+
+**overlay** — spans multiple Docker hosts. Used with Docker Swarm to connect containers across machines as if they were on the same network.
+
+**macvlan** — assigns a real MAC address to the container, making it appear as a physical device on the network. Containers get IPs directly from the LAN subnet. Useful when containers need to be directly addressable on the physical network without NAT. Works best on bare metal with a real physical switch. (KVM or Proxmox using a bridged network such as `br0`.)
+
+**ipvlan** — similar to macvlan but all containers share the host's MAC address. Uses IP-level separation instead of MAC-level. Better for environments where the upstream switch limits MAC addresses per port.
 
 ## Troubleshooting
 
