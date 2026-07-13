@@ -329,6 +329,18 @@ Docker supports six network drivers:
 
 **ipvlan** — similar to macvlan but all containers share the host's MAC address. Uses IP-level separation instead of MAC-level. Better for environments where the upstream switch limits MAC addresses per port.
 
+For example:
+
+```console
+docker network create -d ipvlan \
+  --subnet=10.42.20.0/24 \
+  --gateway=10.42.0.1 \
+  --ip-range=10.42.20.0/24 \
+  -o parent=enp1s0 \
+  -o ipvlan_mode=l2 \
+  ipvlan-net
+```
+
 ## Troubleshooting
 
 **`Got permission denied` running docker commands:**
