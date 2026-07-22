@@ -210,7 +210,7 @@ systemctl --failed
 sudo find / -xdev -type f -perm -o+w 2>/dev/null
 ```
 
-> **Note:** A minimal server install with no GUI or extra software will return little to no results. A desktop or developer system with applications like NoMachine, VSCode, or similar will return a longer list — those entries are expected given what is installed. Always question anything unexpected, especially on a production server.
+> **Note:** A minimal server install with no GUI or extra software will return little to no results. A desktop or developer system with applications or extra hardware might provide a resuult. Always question anything unexpected, especially on a production server.
 
 ### Check for SUID/SGID binaries
 
@@ -220,7 +220,17 @@ sudo find / -xdev -type f \( -perm -4000 -o -perm -2000 \) 2>/dev/null
 
 > **Note:** A minimal Debian server install returns very few results here. A desktop system will return a longer list due to GUI tools and third-party applications. The key is knowing your baseline — audit this list after installing any new software.
 
-### Set correct permissions on sensitive files
+### Check and set correct permissions on sensitive files
+
+First, check files. For example:
+
+```bash
+ls -la /etc/shadow
+```
+
+What are the permissions? Are they relatively secure?
+
+Next, change permissions:
 
 ```bash
 sudo chmod 600 /etc/shadow
@@ -229,9 +239,9 @@ sudo chmod 644 /etc/group
 ls -la /etc/shadow /etc/passwd /etc/group
 ```
 
-> **Note:** `/etc/shadow` is the critical one here — it contains hashed passwords. The default is `640` which allows the `shadow` group to read it. Changing to `600` restricts access to root only.
+> **Note:** `/etc/shadow` is the critical one here — it contains hashed passwords. The default (in Debian) is `640` which allows the `shadow` group to read it. Changing to `600` restricts access to root only.
 >
-> **CentOS:** `/etc/shadow` is set to `000` by default — no permissions for any user. Root can still access it because root bypasses permission checks entirely, making it more restrictive than Debian's default. No change is needed on CentOS.
+> **CentOS:** `/etc/shadow` is set to `000` by default — no permissions for any user making it more restrictive than Debian's default. No change is needed on CentOS.
 
 ### Check for files with no owner
 
@@ -376,6 +386,15 @@ sudo freshclam --version
 > sudo freshclam
 > sudo systemctl enable --now clamav-freshclam
 > ```
+> If the database won't update try setting permissions:
+> ```
+> sudo chown -R clamupdate:clamupdate /var/lib/clamav
+> ```
+> or
+> check SELinux
+> ```
+> sudo restorecon -Rv /var/lib/clamav
+> ```
 
 ### Run a manual scan
 
@@ -405,7 +424,7 @@ This runs a recursive scan of `/home` at 2am daily and appends results to the lo
 
 > **Note:** cron is ideal for servers that run continuously. For client systems that may be powered off at 2am, consider `anacron` instead — it runs missed jobs at the next system startup. Debian installs `anacron` by default alongside `cron`.
 
-### Check ClamAV status
+### Check ClamAV status (Optional)
 
 Enable and start the ClamAV scanning daemon:
 
@@ -490,10 +509,38 @@ sudo touch /etc/passwd
 sudo ausearch -k passwd-changes
 ```
 
+> Note: To check all audit events without filtering:
+> 
+> `sudo ausearch -ts today` (all audit events)
+> 
+> `sudo ausearch -ts boot` (audit log)
+
 ### Generate an audit report
+
+Show all files that were accessed by file name:
+
+```bash
+sudo aureport -f
+```
+
+or, by tag name:
+
+```bash
+sudo aureport -k
+```
+
+or, 
+
+Show a basic summary:
 
 ```bash
 sudo aureport --summary
+```
+
+or
+
+```bash
+sudo ausearch -ts today --interpret
 ```
 
 ### Make rules persistent
@@ -525,6 +572,13 @@ Verify rules are removed:
 ```bash
 sudo auditctl -l
 ```
+
+> For help (example):
+> 
+> ```bash 
+> sudo aureport --help 
+> ```
+
 
 ---
 
