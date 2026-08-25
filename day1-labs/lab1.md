@@ -511,6 +511,10 @@ In addition, I built my own GUI-based network analysis tool for local systems ca
 
 There is an extra lab that makes use of `iperf` to check network performance. See [appendix-3-mtu-performance-test](../z-more-stuff/appendix-3-mtu-performance-test.md)
 
+**Basic System Auditing**
+
+See [appendix-X1-basic-system-auditing](../z-more-stuff/appendix-X1-basic-system-auditing.md) for a list of commands I run at Debian and CentOS systems to learn more about them, plus bash scripts that will run all the commands and save a markdown-based report. Enjoy! 😀
+
 ### TCP/IP Reference Links
 
 - TCP/IP Guide (2005): <https://learning.oreilly.com/library/view/tcpip-guide/9781593270476/>
