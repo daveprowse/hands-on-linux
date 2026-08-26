@@ -1,4 +1,4 @@
-# Appendix X1 — Basic System Auditing
+# Appendix X1 — Basic Linux System Analysis
 
 When I sit down to a Linux system that I have not worked at yet I like to run a variety of commands to gather information about that system. 😎
 
@@ -16,6 +16,7 @@ Here's the list of commands for a Debian system check:
 - `ss -tulnw`
 - `ping -c 3 1.1.1.1`
 - `systemctl status`
+- `systemctl --failed`
 - `sudo apt-get check`
 - `sudo dpkg --audit`
 - `lsblk`
@@ -60,15 +61,15 @@ If you want to do this on an Arch-based system then switch out the following com
 
 ## Bash script (for Debian)
 
-1. See the file `sys_audit_debian.md` 
-2. Set permissions: `chmod +x sys_audit_debian.md`
-3. Run it! `./sys_audit_debian.md`
+1. See the file `sys_audit_debian.sh` 
+2. Set permissions: `chmod +x sys_audit_debian.sh`
+3. Run it! `./sys_audit_debian.sh`
 
 ## Bash script (for CentOS)
 
-1. See the file `sys_audit_centos.md` 
-2. Set permissions: `chmod +x sys_audit_centos.md`
-3. Run it! `./sys_audit_centos.md`
+1. See the file `sys_audit_centos.sh` 
+2. Set permissions: `chmod +x sys_audit_centos.sh`
+3. Run it! `./sys_audit_centos.sh`
 
 > Note: Minimal CentOS installations do not always include lshw by default. The script handles this gracefully, but if you notice that section is blank on your CentOS system, you can easily install it by running:
 > 
@@ -76,9 +77,9 @@ If you want to do this on an Arch-based system then switch out the following com
 
 ## Bash script (for Arch)
 
-1. See the file `sys_audit_arch.md` 
-2. Set permissions: `chmod +x sys_audit_arch.md`
-3. Run it! `./sys_audit_arch.md`
+1. See the file `sys_audit_arch.sh` 
+2. Set permissions: `chmod +x sys_audit_arch.sh`
+3. Run it! `./sys_audit_arch.sh`
 
 > Note: A fresh Arch installation usually does not include lshw or lspci (part of pciutils) by default. If those sections turn up blank in your report, you can easily install them using:
 > 
