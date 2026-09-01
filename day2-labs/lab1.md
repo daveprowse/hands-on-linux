@@ -586,6 +586,13 @@ sudo auditctl -l
 
 ---
 
+## Additional Resources
+
+Debian Versions and Long Term Support (LTS)
+
+https://wiki.debian.org/LTS/
+
+
 ## Troubleshooting
 
 **unattended-upgrades not running:**

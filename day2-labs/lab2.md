@@ -74,6 +74,20 @@ Find the line `#Port 22` and change it to:
 Port 2222
 ```
 
+---
+> **CentOS**: When you change the SSH port on CentOS, SELinux needs to be told the new port is allowed:
+> 
+> ```bash
+> sudo semanage port -a -t ssh_port_t -p tcp 2222
+> ```
+> 
+> Then, verify:
+> 
+> ```bash
+> sudo semanage port -l | grep ssh
+> ```
+---
+
 > **Note:** Changing the port is security through obscurity — it reduces automated scan noise but is not a substitute for proper authentication hardening.
 
 ### Disable TCP port forwarding
@@ -88,7 +102,7 @@ AllowTcpForwarding no
 
 ### Restrict SFTP
 
-To allow SFTP but restrict users to their home directory, add a dedicated SFTP subsystem block at the end of `sshd_config`:
+To allow SFTP (only) but restrict users to their home directory, add a dedicated SFTP subsystem block at the end of `sshd_config`:
 
 ```
 Subsystem sftp internal-sftp
@@ -100,12 +114,14 @@ Match Group sftp-users
     X11Forwarding no
 ```
 
-Create the SFTP group and add a user:
+Create the SFTP group and add a user (but not your primary user!):
 
 ```bash
 sudo addgroup sftp-users
-sudo adduser dave sftp-users
+sudo adduser <other_user> sftp-users
 ```
+
+>Note: Now that user should only be able to connect via SFTP, not direct SSH connections. They will also be fairly locked down during the SFTP session and will not be able to go above their user's "root" directory. 
 
 ### Validate and restart
 
@@ -157,12 +173,20 @@ PasswordAuthentication no
 
 ### Create an exclusive SSH group
 
+In another terminal: 
 ```bash
 sudo addgroup ssh-allowed
 sudo adduser dave ssh-allowed
 ```
 
-Add to `sshd_config`:
+> Note: If the adduser command gives a Perl error, try:
+>
+> `gpasswd -a dave ssh-allowed`
+>
+> CentOS users will want `useradd` instead of `adduser`.
+
+
+In `sshd_config` add the following ABOVE THE SFTP MATCH BLOCK!:
 
 ```
 AllowGroups ssh-allowed
@@ -181,11 +205,21 @@ sudo deluser dave ssh-allowed
 ssh dave@10.0.2.51 -p 2222
 ```
 
-This should fail. Re-add the user:
+> Note: If the deluser command gives a Perl error, try:
+>
+> `gpasswd -d dave ssh-allowed`
+>
+> CentOS users will want `userdel` instead of `deluser`. 
+
+Open a new terminal and try SSH'ing in from the client. This should fail. 
+
+Re-add the user:
 
 ```bash
 sudo adduser dave ssh-allowed
 ```
+
+Test it again!
 
 ### Lower maximum authentication attempts
 
@@ -219,13 +253,16 @@ sudo systemctl restart ssh
 
 **Estimated time: 5 min**
 
-### View the server's host key fingerprint
+### View the server's host key
 
 On **deb1** (server):
 
 ```bash
+cat /etc/ssh/ssh_host_ed25519_key.pub
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 ```
+
+> Note: You can also use the `ssh-keygen -lf <keyname>` command. This shows the SHA-256 fingerprint of the key which can be useful for verifying during a first connection prompt.
 
 ### View known_hosts on the client
 
@@ -235,24 +272,50 @@ On **deb2** (client):
 cat ~/.ssh/known_hosts
 ```
 
-The fingerprint stored here should match the server's host key above.
+The key stored here should match the server's host key above. (Use `grep` to filter if you have multiple keys on the client.)
 
-### Simulate a host key change
+---
 
-On **deb1**, view the current host keys:
+> **Sidebar**: The first portion of the public key is a hashed version of the remote system's hostname. This is an HMAC-SHA1 one-way function, so we can't reverse engineer it, but we can check against it with (from the client):
+>
+> `ssh-keygen -F 10.0.2.51`
+>
+> The hashing protects against casual inspection but not against dtermined attackers that use dictionary or brute force attacks. It is enabled by default in the Debian client at `/etc/ssh_config` with `HashKnownHosts`.
+
+---
+
+### Simulate a changed host key (the scary warning)
+
+> **Warning:** The following commands delete and regenerate the server's SSH host keys. If you are connected to a remote or cloud-based system without console access, this will sever all SSH connectivity and you will need to reconnect via the cloud provider's console or out-of-band management interface. Only run this on a local VM or a system you have console access to.
+
+On **deb1** (server), delete and regenerate the host keys:
 
 ```bash
-ls -la /etc/ssh/ssh_host_*
+sudo rm /etc/ssh/ssh_host_*
+sudo ssh-keygen -A
+sudo systemctl restart ssh
 ```
 
-On **deb2**, attempt to connect after manually removing the known_hosts entry:
+From **deb2** (client), attempt to connect:
+
+```bash
+ssh dave@10.0.2.51 -p 2222
+```
+
+You will see the `WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED` message with the `@@@@@` border. This is what a real man-in-the-middle attack or a rebuilt server looks like to SSH. Read the error output carefully!
+
+Remove the old entry and reconnect with the new key:
 
 ```bash
 ssh-keygen -R 10.0.2.51
 ssh dave@10.0.2.51 -p 2222
 ```
 
-SSH will warn that the host is unknown and prompt to verify the fingerprint. This is the expected behavior when a host key changes — in production, always verify out-of-band before accepting.
+> Note: If this does not work, or the host is not found, use the instructions provided in the terminal using the `ssh-keygen -f` command. 
+
+Accept the new fingerprint when prompted.
+
+> **Note:** In production, never blindly accept a changed host key without verifying out-of-band that the server was intentionally rebuilt or reconfigured. A changed key could indicate a man-in-the-middle attack.
 
 ### Strict host key checking
 
@@ -261,6 +324,16 @@ To enforce strict checking and never prompt:
 ```bash
 ssh -o StrictHostKeyChecking=yes dave@10.0.2.51 -p 2222
 ```
+
+---
+> **Sidebar:** In production the realistic workflow is:
+> 
+> 1. Get the fingerprint from the server during initial provisioning — either via console access, a configuration management tool like Ansible, or a secrets manager
+> 2. Pre-populate known_hosts before first connection
+> 3. Use StrictHostKeyChecking=yes thereafter so any unexpected key change causes a hard failure rather than a prompt
+> 
+> 😎 The prompt itself is the weak point — most users type `yes` without verifying, which defeats the purpose entirely.
+> 
 
 ---
 
@@ -285,8 +358,11 @@ chmod 600 ~/ssh-backup/id_ed25519
 On **deb1** (server):
 
 ```bash
+mkdir -p ~/ssh-backup/
 sudo cp /home/dave/.ssh/authorized_keys ~/ssh-backup/authorized_keys.bak
 ```
+
+> **Note:** Storing the backup on the server itself requires console access to restore in a lockout — consider storing it off-server for better recovery options.
 
 ### Simulate key loss and restore
 
@@ -294,119 +370,49 @@ On **deb2**:
 
 ```bash
 rm ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub
+ssh-add -D
+```
+
+Attemp to connect. It should fail. Oh no! 😥
+
+Now restore the keys.
+
+```bash
 cp ~/ssh-backup/id_ed25519 ~/.ssh/
 cp ~/ssh-backup/id_ed25519.pub ~/.ssh/
 chmod 600 ~/.ssh/id_ed25519
 ```
 
-Test the connection:
+Test the connection again. It should work now if you restored properly:
 
 ```bash
 ssh dave@10.0.2.51 -p 2222
 ```
 
-> **Note:** In production, SSH keys should be backed up to an encrypted location — an external drive, a secrets manager, or an encrypted archive. Never store private keys in plaintext on a shared system.
+Oh YES! 😀
+
+> **Best practice — SSH key backup locations:**
+> A local backup is better than nothing, but the most resilient approach is to store SSH keys and `authorized_keys` off the server entirely. Options include:
+> - A configuration management system such as Ansible or Puppet
+> - A secrets manager such as HashiCorp Vault or Keeper
+> - An encrypted, access-controlled backup system
+> This ensures access to the backup through an alternative path regardless of SSH availability.
 
 ---
 
-## Lab 2e — 2FA with libpam-oath
+## Lab 2e — Two-Factor Authentication Overview
 
-**Estimated time: 8 min**
+Two-factor authentication (2FA) adds a second layer of verification on top of SSH key authentication. Two common approaches on Linux are **libpam-oath** — an open source TOTP implementation with no dependency on Google services — and **Google Authenticator PAM**, which integrates with the Google Authenticator app. Both work by generating a time-based one-time password (OTP) that expires every 30 seconds, requiring the user to provide it at login in addition to their SSH key.
 
-libpam-oath adds TOTP (Time-based One-Time Password) authentication to SSH without depending on Google software.
-
-### Install
-
-**Debian:**
-```bash
-sudo apt install libpam-oath oathtool -y
-```
-
-> **CentOS:**
-> ```bash
-> sudo dnf install epel-release -y
-> sudo dnf install oathtool pam_oath -y
-> ```
-
-### Generate a secret key
-
-```bash
-HEX_SECRET=$(head -c 1024 /dev/urandom | openssl sha1 | awk '{print $2}')
-echo $HEX_SECRET
-```
-
-### Add the user to the oath users file
-
-```bash
-sudo bash -c "echo 'HOTP/T30/6 dave - $HEX_SECRET' >> /etc/users.oath"
-sudo chmod 600 /etc/users.oath
-sudo chown root:root /etc/users.oath
-```
-
-### Generate a test OTP to verify
-
-```bash
-oathtool --totp -d 6 $HEX_SECRET
-```
-
-This generates the current 6-digit OTP. Note it — it changes every 30 seconds.
-
-### Configure PAM
-
-Edit `/etc/pam.d/sshd`:
-
-```bash
-sudo vim /etc/pam.d/sshd
-```
-
-Add at the top (before `@include common-auth`):
-
-```
-auth required pam_oath.so usersfile=/etc/users.oath window=30 digits=6
-```
-
-### Configure sshd_config
-
-Add or uncomment:
-
-```
-ChallengeResponseAuthentication yes
-UsePAM yes
-```
-
-### Validate and restart
-
-```bash
-sudo sshd -t
-sudo systemctl restart ssh
-```
-
-> **CentOS:**
-> ```bash
-> sudo systemctl restart sshd
-> ```
-
-### Test
-
-From deb2:
-
-```bash
-ssh dave@10.0.2.51 -p 2222
-```
-
-You should be prompted for the OTP. Generate it:
-
-```bash
-oathtool --totp -d 6 $HEX_SECRET
-```
-
-> **Note:** For production use, pair this with an authenticator app such as FreeOTP or Aegis — both are open source and do not require Google services. Scan a QR code generated from the hex secret to add it to the app.
+> See [**Appendix 6**](../z-more-stuff/appendix-6-2FA-SSH.md) for a full hands-on lab covering libpam-oath installation, configuration, and testing.
 
 ---
 
 ## Lab 2f — Brute Force Protection with fail2ban
 
-**Estimated time: 7 min**
+fail2ban monitors log files and bans IP addresses that exceed a defined number of failed login attempts within a set time window. It is one of the most effective tools for reducing SSH brute force noise on a public-facing server.
+
+---
 
 ### Install fail2ban
 
@@ -421,31 +427,6 @@ sudo apt install fail2ban -y
 > sudo dnf install fail2ban -y
 > ```
 
-### Configure for SSH
-
-```bash
-sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-sudo vim /etc/fail2ban/jail.local
-```
-
-Find the `[sshd]` section and set:
-
-```ini
-[sshd]
-enabled  = true
-port     = 2222
-maxretry = 3
-bantime  = 1h
-findtime = 10m
-```
-
-> **Note:** We changed the SSH port to 2222 in Lab 2a — update the `port` value here to match.
-
-> **CentOS:** Add the backend parameter:
-> ```ini
-> backend = systemd
-> ```
-
 ### Start and enable
 
 ```bash
@@ -453,32 +434,133 @@ sudo systemctl enable --now fail2ban
 sudo systemctl status fail2ban
 ```
 
-### Verify SSH jail
+---
+
+### Understanding the configuration structure
+
+fail2ban reads configuration from multiple locations in this order:
+
+1. `/etc/fail2ban/jail.conf` — default config, **overwritten on upgrades, do not edit**
+2. `/etc/fail2ban/jail.d/` — drop-in files that extend or override the defaults
+3. `/etc/fail2ban/jail.local` — local overrides (alternative to jail.d files)
+
+On Debian, the package ships a pre-configured file at `/etc/fail2ban/jail.d/defaults-debian.conf`. View it:
+
+```bash
+cat /etc/fail2ban/jail.d/defaults-debian.conf
+```
+
+It contains:
+
+```ini
+[DEFAULT]
+banaction = nftables
+banaction_allports = nftables[type=allports]
+
+[sshd]
+backend = systemd
+journalmatch = _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+enabled = true
+```
+
+This file enables the sshd jail using `nftables` for banning and `systemd` for log reading. Do not edit this file — it may be overwritten on upgrades.
+
+---
+
+### Create a custom sshd override
+
+Create a new drop-in file in `jail.d/` that merges with `defaults-debian.conf`:
+
+```bash
+sudo vim /etc/fail2ban/jail.d/sshd-custom.conf
+```
+
+```ini
+[sshd]
+port     = 2222
+maxretry = 3
+bantime  = 1h
+findtime = 10m
+```
+
+- `port` — must match the SSH port set in Lab 2a
+- `maxretry` — number of failures before banning
+- `bantime` — how long the ban lasts
+- `findtime` — the window in which failures are counted
+
+> **Note:** fail2ban merges all files in `jail.d/` automatically. The settings in `sshd-custom.conf` extend rather than replace `defaults-debian.conf`.
+
+Restart fail2ban to apply:
+
+```bash
+sudo systemctl restart fail2ban
+sudo systemctl status fail2ban
+```
+
+---
+
+### Verify the SSH jail
 
 ```bash
 sudo fail2ban-client status
 sudo fail2ban-client status sshd
 ```
 
-### Test
+Confirm the jail is active and the port shows `2222`.
 
-From deb2, attempt several failed SSH logins deliberately:
+---
+
+### Test fail2ban
+
+From **deb2**, attempt several failed SSH logins deliberately:
 
 ```bash
 ssh wronguser@10.0.2.51 -p 2222
 ```
 
-After 3 failures, check the banned IP:
+After 3 failures, check the banned IP list on **deb1**:
 
 ```bash
 sudo fail2ban-client status sshd
 ```
 
-### Unban
+The IP of deb2 should appear under `Banned IP list`.
+
+### Unban an IP
 
 ```bash
 sudo fail2ban-client set sshd unbanip 10.0.2.52
 ```
+
+That's it! 😎
+
+---
+
+### CentOS notes
+
+> **CentOS:** The `defaults-debian.conf` file does not exist on CentOS. Instead, copy `jail.conf` to `jail.local` and configure the `[sshd]` section there:
+> ```bash
+> sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+> sudo vim /etc/fail2ban/jail.local
+> ```
+> Find the `[sshd]` section and set:
+> ```ini
+> [sshd]
+> enabled  = true
+> port     = 2222
+> maxretry = 3
+> bantime  = 1h
+> findtime = 10m
+> backend  = systemd
+> ```
+> CentOS uses `firewalld` for banning by default rather than `nftables`. No additional configuration is needed for this.
+
+### Resources
+
+- `man fail2ban` — comprehensive local reference for all commands and options
+- fail2ban official website: https://www.fail2ban.org
+- fail2ban GitHub Wiki: https://github.com/fail2ban/fail2ban/wiki
+- fail2ban GitHub repository: https://github.com/fail2ban/fail2ban
 
 ---
 
@@ -500,34 +582,72 @@ In large environments, SSH keys proliferate without tracking or expiry:
 
 step-ca acts as an SSH Certificate Authority:
 
-- Every certificate issuance is **logged** with the principal, timestamp, and serial number
+- Every certificate issuance is **logged** by the CA process
 - Certificates **expire automatically** — no manual revocation needed for routine access
 - Immediate revocation via a KRL (Key Revocation List)
 
-### Tracking issued certificates (instructor demo)
-
-On the step-ca server, view the certificate database:
+### Start step-ca on the demo server
 
 ```bash
-step ca admin list
+step-ca $(step path)/config/ca.json 2>&1 | tee ~/step-ca.log
 ```
 
-View the audit log of issued certificates:
+Leave this terminal open — step-ca runs in the foreground and logs all activity including every certificate issuance.
+
+### View provisioners
+
+In a second terminal:
 
 ```bash
-cat $(step path)/db/issuedCerts
+step ca provisioner list
 ```
+
+### Track issued certificates
+
+step-ca logs every certificate issuance to the process output. Search the log:
+
+```bash
+grep "ssh/sign" ~/step-ca.log
+```
+
+The output includes timestamp, principal, serial number, remote address, and validity period — a full audit trail of who received a certificate and when.
 
 ### Immediate revocation via KRL (instructor demo)
 
-Generate a KRL file that revokes a specific certificate by serial number:
+**Step 1 — Issue a certificate from the client and note the serial number:**
 
 ```bash
-ssh-keygen -k -f /etc/ssh/revoked_keys -s /etc/ssh/ssh_ca.pub \
-  -z <serial-number> /dev/null
+# On client (ws2)
+step ssh inspect ~/.ssh/id_ed25519-cert.pub | grep Serial
 ```
 
-Tell sshd to enforce it — add to `/etc/ssh/sshd_config`:
+**Step 2 — Copy the certificate to the server:**
+
+```bash
+# On client (ws2)
+scp ~/.ssh/id_ed25519-cert.pub user@10.42.17.101:/tmp/
+```
+
+**Step 3 — Generate the KRL on the server using the certificate file:**
+
+```bash
+# On server (ws1)
+sudo ssh-keygen -k -f /etc/ssh/revoked_keys \
+  -s $(step path)/certs/ssh_user_ca_key.pub \
+  /tmp/id_ed25519-cert.pub
+```
+
+**Step 4 — Verify the certificate is revoked:**
+
+```bash
+sudo ssh-keygen -Qf /etc/ssh/revoked_keys /tmp/id_ed25519-cert.pub
+```
+
+Should return `REVOKED`.
+
+**Step 5 — Tell sshd to enforce the KRL:**
+
+Add to `/etc/ssh/sshd_config`:
 
 ```
 RevokedKeys /etc/ssh/revoked_keys
@@ -537,7 +657,37 @@ RevokedKeys /etc/ssh/revoked_keys
 sudo systemctl restart ssh
 ```
 
-Any certificate with that serial number will now be rejected immediately — before its expiry.
+**Step 6 — Disable password authentication to test:**
+
+```bash
+# Temporarily set in /etc/ssh/sshd_config:
+PasswordAuthentication no
+```
+
+```bash
+sudo systemctl restart ssh
+```
+
+**Step 7 — Test from the client:**
+
+```bash
+ssh user@10.42.17.101
+```
+
+Expected result:
+
+
+The certificate was rejected by the KRL.
+
+**Step 8 — Restore password authentication:**
+
+```bash
+# On server — set back in /etc/ssh/sshd_config:
+PasswordAuthentication yes
+sudo systemctl restart ssh
+```
+
+---
 
 ### Other SSH key management tools
 
@@ -546,19 +696,6 @@ Any certificate with that serial number will now be rejected immediately — bef
 | **Teleport** | Open source | Full SSH access management, certificate-based, audit logging |
 | **Keeper** | Commercial | Enterprise secrets and SSH key vault, privileged access management |
 | **HashiCorp Vault** | Open source core | SSH secrets engine, dynamic key issuance |
-
----
-
-## Optional — SSH Timeouts
-
-Add to `/etc/ssh/sshd_config`:
-
-```
-ClientAliveInterval 300
-ClientAliveCountMax 2
-```
-
-This disconnects idle sessions after 10 minutes (300 seconds × 2 checks).
 
 ---
 
@@ -629,3 +766,21 @@ sudo ufw delete allow 22/tcp
 > sudo firewall-cmd --permanent --remove-service=ssh
 > sudo firewall-cmd --reload
 > ```
+
+## SSH Security Documentation
+
+**NIST IR 7966** — "Security of Interactive and Automated Access Management Using Secure Shell (SSH)"
+
+https://nvlpubs.nist.gov/nistpubs/ir/2015/nist.ir.7966.pdf
+
+**Mozilla OpenSSH Guidelines:**
+
+https://infosec.mozilla.org/guidelines/openssh
+
+**CIS Benchmarks:**
+
+https://www.cisecurity.org/benchmark/debian_linux
+
+**OpenSSH man page:**
+
+`man sshd_config`

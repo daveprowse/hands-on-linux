@@ -541,7 +541,7 @@ The Open Systems Interconnection (OSI) reference model is used to define how dat
 - Layer 2:  Data Link
 - Layer 1:  Physical
 
-Different protocols work on different layers. For example, in Lab 1-1 we used the `ip a` command. This displayed the IP address of the system (10.0.2.51). IP addresses exist on layer 3 of the OSI model: the network layer. Other protocols work on other layers. For instance, TCP works on layer 4 (transport), and HTTP works on layer 7 (application). When you have different protocols working on different layers, they are considered to be *stacked* upon each other. This leads to terms such as "OSI stack", "TCP/IP stack", or simply "network stack". The OSI model can be very helpful when designing programs, designing networks, and troubleshooting network connections, as well as doing packet analysis. 
+Different protocols work on different layers. For example, in Lab 1 we used the `ip a` command. This displayed the IP address of the system (e.g. 10.0.2.51). IP addresses exist on layer 3 of the OSI model: the network layer. Other protocols work on other layers. For instance, TCP works on layer 4 (transport), and HTTP works on layer 7 (application). When you have different protocols working on different layers, they are considered to be *stacked* upon each other. This leads to terms such as "OSI stack", "TCP/IP stack", or simply "network stack". The OSI model can be very helpful when designing programs, designing networks, and troubleshooting network connections, as well as doing packet analysis. 
 
 ### `netstat` and legacy network tools
 
