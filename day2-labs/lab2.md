@@ -404,7 +404,7 @@ Oh YES! 😀
 
 Two-factor authentication (2FA) adds a second layer of verification on top of SSH key authentication. Two common approaches on Linux are **libpam-oath** — an open source TOTP implementation with no dependency on Google services — and **Google Authenticator PAM**, which integrates with the Google Authenticator app. Both work by generating a time-based one-time password (OTP) that expires every 30 seconds, requiring the user to provide it at login in addition to their SSH key.
 
-> See [**Appendix 6**](../z-more-stuff/appendix-6-2FA-SSH.md) for a full hands-on lab covering libpam-oath installation, configuration, and testing.
+> **Real-World Config:** See [**Appendix 6**](../z-more-stuff/appendix-6-2FA-SSH.md) for a full hands-on lab covering libpam-oath installation, configuration, and testing.
 
 ---
 

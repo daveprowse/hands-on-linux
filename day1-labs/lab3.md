@@ -386,3 +386,15 @@ Confirm Prometheus is still running in the foreground terminal.
 
 **No data in Prometheus queries:**
 Wait at least one scrape interval (15 seconds) after starting both services before running queries.
+
+## Additional Resources
+
+Check out my video courses for more about the topics in this lab:
+
+**Prometheus**
+
+https://learning.oreilly.com/course/prometheus-certified-associate/9780135556139/
+
+**rsyslog**
+
+https://learning.oreilly.com/videos/linux-security/9780135338001/9780135338001-LSB1_04_18_02/

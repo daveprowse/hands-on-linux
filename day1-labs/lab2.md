@@ -118,7 +118,7 @@ You should be prompted for your key passphrase instead of your account password.
 >
 > You can also connect by way of SSH certificates - the newer standard. SSH certificates are SSH keys that have been signed by a trusted Certificate Authority, allowing servers to grant access based on CA trust rather than storing individual public keys in `authorized_keys`.
 >
-> This is an in-depth process, and too time-consuming for this lab, but I wrote out a separate step-by-step lab for you. There are separate lab documents in Appendix 5 for [Debian](../z-more-stuff/appendix-5a-debian-ssh-certificates-with-smallstep.md) and for [CentOS](../z-more-stuff/appendix-5b-centos-ssh-certificates-with-smallstep.md). Enjoy!
+> **Real-World Config:** This is an in-depth process, and too time-consuming for this lab, but I wrote out a separate step-by-step lab for you. There are individual lab documents in Appendix 5 for [Debian](../z-more-stuff/appendix-5a-debian-ssh-certificates-with-smallstep.md) and for [CentOS](../z-more-stuff/appendix-5b-centos-ssh-certificates-with-smallstep.md). Enjoy!
 
 ---
 
