@@ -37,3 +37,7 @@ Dave Prowse
 
 ---
 
+> Note: Also, check out my *Linux Networking & Security Basics & Beyond* video course: 
+>
+> https://learning.oreilly.com/course/linux-networking-and/9780135378489/
+
