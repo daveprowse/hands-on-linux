@@ -27,7 +27,7 @@ You can find step-by-step instructions and videos about how to install a Debian 
 - [O'Reilly](https://learning.oreilly.com/videos/hashicorp-certified-terraform/9780135909560/9780135909560-HCTA4_01_01_03/)
 - [My website](https://prowse.tech/linux-installs/)
 
-> Note: I highly recommend actual virtual machines that run locally. (Not containers or cloud-based systems.) General webinar setup suggestions can be found [here](https://prowse.tech/webinars/).
+> Note: I highly recommend actual virtual machines that run locally. (Not containers or cloud-based systems.) [VirtualBox](https://www.virtualbox.org/wiki/Downloads) with [Debian](https://www.debian.org/distrib/) is the easiest way to get started. General webinar setup suggestions can be found [here](https://prowse.tech/webinars/).
 
 My main IP network for the virtual machines is 10.0.2.0/24. I used this to mimic what you would see if you were using VirtualBox in NAT Network mode (which is an excellent way to learn!)
 
